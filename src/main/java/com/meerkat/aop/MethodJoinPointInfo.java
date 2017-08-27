@@ -1,5 +1,6 @@
 package com.meerkat.aop;
 
+import com.meerkat.fusing.FusingConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -14,14 +15,13 @@ import java.lang.reflect.Method;
 @Slf4j
 public class MethodJoinPointInfo {
 
-    private final Class<? extends Throwable>[] ignoreExceptions;
+    private final MeerkatCommand annotation;
+    private final Class[] parameterTypes;
     private ProceedingJoinPoint joinPoint;
 
     Class<? extends Object> joinClass;
     private Method method;
 
-    private Class<? extends ReturnValueInspection> returnValueInspection ;
-    private static ReturnValueInspection defaultReturnValueInspection = new ReturnValueInspectionNULL();
 
     MethodJoinPointInfo(ProceedingJoinPoint joinPoint){
         this.joinPoint = joinPoint;
@@ -33,12 +33,14 @@ public class MethodJoinPointInfo {
         Signature signature = joinPoint.getSignature();
         MethodSignature methodSignature = (MethodSignature) signature;
         this.method = methodSignature.getMethod();
+        this.parameterTypes = methodSignature.getParameterTypes();
 
 
         // Get annonation INFO
-        MeerkatCommand annotation = this.method.getAnnotation(MeerkatCommand.class);
-        this.returnValueInspection = annotation.returnValueInspection();
-        this.ignoreExceptions = annotation.ignoredExceptions();
+        annotation = this.method.getAnnotation(MeerkatCommand.class);
+//        this.returnValueInspection = annotation.returnValueInspection();
+//        this.ignoreExceptions = annotation.ignoredExceptions();
+
 
     }
 
@@ -58,7 +60,7 @@ public class MethodJoinPointInfo {
 
     ReturnValueInspection createReturnValueInspection(){
         try {
-            return this.returnValueInspection.newInstance();
+            return this.annotation.returnValueInspection().newInstance();
         } catch (InstantiationException e) {
             log.error(ExceptionUtils.getStackTrace(e));
             return null;
@@ -69,15 +71,45 @@ public class MethodJoinPointInfo {
     }
 
     boolean shouldIgnoreThisException(Throwable e){
-        if(this.ignoreExceptions.length==0){
+        if(this.annotation.ignoredExceptions().length==0){
             return false;
         }
-        for(Class<? extends Throwable> exceptionClass : this.ignoreExceptions){
+        for(Class<? extends Throwable> exceptionClass : this.annotation.ignoredExceptions()){
             if(exceptionClass.isInstance(e)){
                 return true;
             }
         }
         return false;
+    }
+
+    boolean isFusingEnabled(){
+        return this.annotation.fusingConfig()!=FusingDisabled.class;
+    }
+
+    boolean isFallBackEnabled(){
+        return this.annotation.fallBack()!=FallBackDisabled.class;
+    }
+
+    Class<? extends FusingConfig> getFusingConfig(){
+        return this.annotation.fusingConfig();
+    }
+
+    Class<? extends FallBack> getFallBackClass(){
+        return this.annotation.fallBack();
+    }
+
+
+    Class[] getParameterTypes(){
+        return this.parameterTypes;
+    }
+
+    Object[] getArgs(){
+        return this.joinPoint.getArgs();
+    }
+
+
+    ProceedingJoinPoint getJoinPoint(){
+        return this.joinPoint;
     }
 
 }
