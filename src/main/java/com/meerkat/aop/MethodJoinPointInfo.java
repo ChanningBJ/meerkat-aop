@@ -58,6 +58,9 @@ public class MethodJoinPointInfo {
         return void.class == returnType || Void.class == returnType;
     }
 
+    Class<?> getReturnType(){
+        return this.method.getReturnType();
+    }
     ReturnValueInspection createReturnValueInspection(){
         try {
             return this.annotation.returnValueInspection().newInstance();

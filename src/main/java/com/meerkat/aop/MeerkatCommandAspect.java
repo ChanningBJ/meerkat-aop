@@ -42,7 +42,7 @@ public class MeerkatCommandAspect {
     }
 
 
-    private Object runFallBack(MethodJoinPointInfo methodJoinPointInfo, boolean isFusing, Throwable exception, Object result) {
+    private Object runFallBack(MethodJoinPointInfo methodJoinPointInfo, boolean isFusing, Throwable exception, Object result) throws Throwable {
         Class<? extends FallBack> fallbackClass = methodJoinPointInfo.getFallBackClass();
         if (fallbackClass == FallBackDisabled.class) {
             return null;
@@ -52,20 +52,29 @@ public class MeerkatCommandAspect {
                 FallBack fallBack = fallbackClass.newInstance();
                 fallBack.isFusing = isFusing;
                 fallBack.e = exception;
+                fallBack.result = result;
                 return method.invoke(fallBack, methodJoinPointInfo.getArgs());
             } catch (NoSuchMethodException e) {
                 log.warn(ExceptionUtils.getStackTrace(e));
-                return null;
+//                return TypeDefaultValue.getDefaultValue(methodJoinPointInfo.getReturnType());
             } catch (IllegalAccessException e) {
                 log.warn(ExceptionUtils.getStackTrace(e));
-                return null;
+//                return TypeDefaultValue.getDefaultValue(methodJoinPointInfo.getReturnType());
             } catch (InstantiationException e) {
                 log.warn(ExceptionUtils.getStackTrace(e));
-                return null;
+//                return TypeDefaultValue.getDefaultValue(methodJoinPointInfo.getReturnType());
             } catch (InvocationTargetException e) {
                 log.warn(ExceptionUtils.getStackTrace(e));
-                return null;
+//                return TypeDefaultValue.getDefaultValue(methodJoinPointInfo.getReturnType());
             }
+            //调用fallback异常，或者fallback执行的时候出现异常
+            if(isFusing) {  // 熔断模式下，返回默认值
+                return TypeDefaultValue.getDefaultValue(methodJoinPointInfo.getReturnType());
+            }
+            if(exception != null){ // 应用抛出异常，重新抛出
+                throw exception;
+            }
+            return result; // 已经有返回值了，但是在校验的时候失败
         }
     }
 

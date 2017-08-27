@@ -2,6 +2,8 @@ package com.meerkat.aop;
 
 /**
  * Created by chengmingwang on 8/27/17.
+ *
+ * Application MUST implement a method with name getFallBack and providing exactly same parameters
  */
 public class FallBack {
 

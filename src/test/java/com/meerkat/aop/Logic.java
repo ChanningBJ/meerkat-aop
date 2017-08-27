@@ -11,11 +11,6 @@ public class Logic {
 
     private Integer num = 0;
 
-
-    /**
-     * 10% return null
-     * @return
-     */
     @MeerkatCommand
     Integer exec10PercentNull(){
         num+=1;
@@ -57,6 +52,7 @@ public class Logic {
             throw new Exception();
         }
     }
+
 
     public static class Exception1 extends Exception {}
     public static class Exception2 extends Exception {}
